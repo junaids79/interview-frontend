@@ -300,7 +300,7 @@ export default function App() {
 
   const saveToMongoDB = async (reportData) => {
     try {
-      const response = await fetch('https://interview-backend-no91.onrender.com/api/reports', {
+const response = await fetch('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
