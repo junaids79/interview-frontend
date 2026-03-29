@@ -9,6 +9,8 @@ export default function AuthPage({ onAuthSuccess }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
+  const API = '/api/auth';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -23,19 +25,43 @@ export default function AuthPage({ onAuthSuccess }) {
     }
 
     setLoading(true);
+    try {
+      const endpoint = mode === 'login' ? '/login' : '/register';
+      const body = mode === 'login'
+        ? { email, password }
+        : { name, email, password };
 
-    // Mock login — bypass backend
-    setTimeout(() => {
-      const mockUser = {
-        id: '123',
-        name: name || email.split('@')[0],
-        email: email,
+      const res = await fetch(`${API}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Something went wrong.');
+        return;
+      }
+
+      if (!data.user || !data.token) {
+        setError('Server returned an invalid response.');
+        return;
+      }
+
+      const safeUser = {
+        ...data.user,
+        name: data.user.name || data.user.email?.split('@')[0] || 'User',
       };
-      localStorage.setItem('token', 'mock-token-123');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      onAuthSuccess(mockUser);
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(safeUser));
+      onAuthSuccess(safeUser);
+
+    } catch {
+      setError('Cannot reach server. Make sure backend is running.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const switchMode = () => {
